@@ -7,11 +7,12 @@ namespace LabGen
 {
     public class LabyrintStandardNode
     {
+
         string nodeCode;
         string question;
         string correctAnswer;
         string[] otherAnswers;
-        string[] otherNodeCodes;
+        public string[] otherNodeCodes;
         string removalDeadline;
 
         public LabyrintStandardNode(ValiadtedDataFromInput questionAndAnswers, string nodeCode, string[] otherNodeCodes, string removalDeadline)
@@ -22,6 +23,7 @@ namespace LabGen
             otherAnswers = questionAndAnswers.otherAnswers;
             this.otherNodeCodes = otherNodeCodes;
             this.removalDeadline = removalDeadline;
+            
         }
 
         public string GenerateTexTemplate()
@@ -205,9 +207,90 @@ namespace LabGen
         }
     }
 
-    public static class LabGen
+    public class UniqueNodeCodeGenerator
     {
+        public string GenerateNextUniqueNodeCode() 
+        {
+            return "AA";
+        }
+    }
 
+
+    public interface ISchemeGenerator
+    {
+        public void ValidateArgs(int[] args);
+        public List<List<LabyrintStandardNode>> GenerateLabScheme(int[] args, List<ValiadtedDataFromInput> questionAndAnswers, string removalDeadline);
+    }
+
+    public class SimpleSchemeGenerator : ISchemeGenerator
+    {
+        public void ValidateArgs(int[] args)
+        {
+            if (args.Length != 1)
+            {
+                throw new ArgumentException("Simple scheme generator takes just one integer as an argument.");
+            }
+            else if (args[0] < 3 || args[0] > 20)
+            {
+                throw new ArgumentException("Parameter of Simple cheme generator must be an integer between 3 and 20.");
+            }
+        }
+
+        List<List<LabyrintStandardNode>> AssignNodesToLevels(int[] args, List<ValiadtedDataFromInput> questionsAndAnswers, string removalDeadline)
+        {
+            int levelSize = args[0];
+            int remainingNumberOfQuestions = questionsAndAnswers.Count;
+            int inputIndex = 0;
+
+            UniqueNodeCodeGenerator codeGenerator = new UniqueNodeCodeGenerator();
+
+            List<List<LabyrintStandardNode>> levels = new List<List<LabyrintStandardNode>>();
+
+            while (remainingNumberOfQuestions > 0)
+            {
+                List<LabyrintStandardNode> level = new List<LabyrintStandardNode>();
+
+                if (remainingNumberOfQuestions >= levelSize)
+                {
+                    remainingNumberOfQuestions -= levelSize;
+
+                    for (int i = 0; i < levelSize; i++)
+                    {
+                        LabyrintStandardNode node = new LabyrintStandardNode(questionsAndAnswers[inputIndex], codeGenerator.GenerateNextUniqueNodeCode(), null, removalDeadline);
+                        inputIndex++;
+                        level.Add(node);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < remainingNumberOfQuestions; i++)
+                    {
+                        LabyrintStandardNode node = new LabyrintStandardNode(questionsAndAnswers[inputIndex], codeGenerator.GenerateNextUniqueNodeCode(), null, removalDeadline);
+                        inputIndex++;
+                        level.Add(node);
+                    }
+
+                    remainingNumberOfQuestions = 0;
+                }
+
+                levels.Add(level);
+            }
+
+            return levels;
+        }
+
+        void LinkNodes(List<List<LabyrintStandardNode>> levels)
+        {
+            return;
+        }
+
+        public List<List<LabyrintStandardNode>> GenerateLabScheme(int[] args, List<ValiadtedDataFromInput> questionsAndAnswers, string removalDeadline)
+        {
+            ValidateArgs(args);
+            List<List<LabyrintStandardNode>> levels = AssignNodesToLevels(args, questionsAndAnswers, removalDeadline);
+            LinkNodes(levels);
+            return levels;
+        }
     }
 
     internal class Program
@@ -248,4 +331,5 @@ namespace LabGen
    * UI
    * Better input handler (csv)
    * General count of answers
+   * Visual output (graph or text file)
  */
