@@ -54,11 +54,11 @@ namespace LabGen
             \end{{center}}
 
             \begin{{flushleft}}
-                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[0]}: {answers[0]}}} \\
+                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[0]}: {correctAnswer}}} \\
                 \vspace{{0.5cm}}
-                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[1]}: {answers[1]}}} \\
+                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[1]}: {otherAnswers[0]}}} \\
                 \vspace{{0.5cm}}
-                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[2]}: {answers[2]}}}
+                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[2]}: {otherAnswers[1]}}}
             \end{{flushleft}}
 
             \vfill
@@ -240,3 +240,12 @@ namespace LabGen
         }
     }
 }
+
+/*
+ TODO:
+   * SchemeGenerator - based on Interface
+   * UniqueNodeCodeGenerator
+   * UI
+   * Better input handler (csv)
+   * General count of answers
+ */
