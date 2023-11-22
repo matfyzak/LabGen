@@ -209,12 +209,32 @@ namespace LabGen
 
     public class UniqueNodeCodeGenerator
     {
-        public string GenerateNextUniqueNodeCode() 
+        private static Random random = new Random();
+        private HashSet<string> generatedCodes = new HashSet<string>();
+        
+        private char GetRandomUpperCaseLetter()
         {
-            return "AA";
+            const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            int index = random.Next(alphabet.Length);
+
+            return alphabet[index];
+        }
+
+        public string GenerateNextUniqueNodeCode()
+        {
+            string uniqueCode;
+
+            do
+            {
+                char firstChar = GetRandomUpperCaseLetter();
+                char secondChar = GetRandomUpperCaseLetter();
+
+                uniqueCode = $"{firstChar}{secondChar}";
+            } while (!generatedCodes.Add(uniqueCode));
+
+            return uniqueCode;
         }
     }
-
 
     public interface ISchemeGenerator
     {
