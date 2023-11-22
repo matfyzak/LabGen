@@ -7,7 +7,7 @@ namespace LabGen
 {
     public abstract class LabyrintNode
     {
-        protected string nodeCode;
+        public string nodeCode;
 
         public abstract string GenerateTexTemplate();
     }
@@ -289,6 +289,9 @@ namespace LabGen
 
     public class SimpleSchemeGenerator : ISchemeGenerator
     {
+
+        private static Random random = new Random();
+
         public void ValidateArgs(int[] args)
         {
             if (args.Length != 1)
@@ -341,12 +344,42 @@ namespace LabGen
                 levels.Add(level);
             }
 
+            levels.Reverse(); //now first layer/level is on top
+
+            List<LabyrintNode> lastLevel = new List<LabyrintNode>
+            {
+                new LabyrintFinishNode(codeGenerator.GenerateNextUniqueNodeCode())
+            };
+            levels.Add(lastLevel);
+
             return levels;
         }
 
         void LinkNodes(List<List<LabyrintNode>> levels)
         {
-            return;
+            const int answerCount = 3;
+
+            for (int i = 0; i < levels.Count - 1; i++)
+            {
+                foreach (LabyrintNode node in levels[i])
+                {
+                    int index = random.Next(levels[i+1].Count);
+
+                    ((LabyrintStandardNode)node).otherNodeCodes[0] = levels[i + 1][index].nodeCode;
+
+                    for (int j = 1; j < answerCount; j++)
+                    {
+                        int indexOfthisNode = levels[i].IndexOf(node);
+
+                        do {
+                            index = random.Next(levels[i].Count);
+                        }
+                        while (index == indexOfthisNode);
+
+                        ((LabyrintStandardNode)node).otherNodeCodes[j] = levels[i][index].nodeCode;
+                    }
+                }
+            }
         }
 
         public List<List<LabyrintNode>> GenerateLabScheme(int[] args, List<ValiadtedDataFromInput> questionsAndAnswers, string removalDeadline)
