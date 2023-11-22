@@ -72,12 +72,15 @@ namespace LabGen
 
         public override string GenerateTexTemplate()
         {
-            if (otherAnswers.Length != 2 || otherNodeCodes.Length != 3)
+            const int answerCount = 3;
+
+            if (otherAnswers.Length != (answerCount - 1)  || otherNodeCodes.Length != answerCount)
             {
                 throw new ArgumentException { };
             }
 
-            // FIXME shuffle answers first!
+            Random random = new Random();
+            int positionOfCorrectNswer = random.Next(answerCount);
 
 
             string template = $@"
@@ -99,13 +102,37 @@ namespace LabGen
                 \vspace{{0.5cm}}
             \end{{center}}
 
-            \begin{{flushleft}}
-                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[0]}: {correctAnswer}}} \\
+            \begin{{flushleft}}";
+
+            if (positionOfCorrectNswer == 0)
+            {
+                template += $@"\textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[0]}: {correctAnswer}}} \\
                 \vspace{{0.5cm}}
                 \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[1]}: {otherAnswers[0]}}} \\
                 \vspace{{0.5cm}}
                 \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[2]}: {otherAnswers[1]}}}
-            \end{{flushleft}}
+                 ";
+            }
+            else if(positionOfCorrectNswer == 1)
+            {
+                template += $@"\textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[1]}: {otherAnswers[0]}}} \\
+                \vspace{{0.5cm}}
+                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[0]}: {correctAnswer}}} \\
+                \vspace{{0.5cm}}
+                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[2]}: {otherAnswers[1]}}}
+                 ";
+            }
+            else
+            {
+                template += $@"\textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[2]}: {otherAnswers[1]}}} \\
+                \vspace{{0.5cm}}
+                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[1]}: {otherAnswers[0]}}} \\
+                \vspace{{0.5cm}}
+                \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[0]}: {correctAnswer}}}
+                 ";
+            }
+
+            template += $@"\end{{flushleft}}
 
             \vfill
 
@@ -425,8 +452,6 @@ namespace LabGen
 
 /*
  TODO:
-   * SchemeGenerator - based on Interface
-   * UniqueNodeCodeGenerator
    * UI
    * Better input handler (csv)
    * General count of answers
