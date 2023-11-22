@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace LabGen
 {
@@ -12,7 +13,7 @@ namespace LabGen
         public abstract string GenerateTexTemplate();
     }
 
-    public class  LabyrintFinishNode : LabyrintNode
+    public class LabyrintFinishNode : LabyrintNode
     {
         string message;
 
@@ -52,7 +53,7 @@ namespace LabGen
     }
 
     public class LabyrintStandardNode : LabyrintNode
-    {        
+    {
         string question;
         string correctAnswer;
         string[] otherAnswers;
@@ -67,14 +68,14 @@ namespace LabGen
             otherAnswers = questionAndAnswers.otherAnswers;
             this.otherNodeCodes = otherNodeCodes;
             this.removalDeadline = removalDeadline;
-            
+
         }
 
         public override string GenerateTexTemplate()
         {
             const int answerCount = 3;
 
-            if (otherAnswers.Length != (answerCount - 1)  || otherNodeCodes.Length != answerCount)
+            if (otherAnswers.Length != (answerCount - 1) || otherNodeCodes.Length != answerCount)
             {
                 throw new ArgumentException { };
             }
@@ -113,7 +114,7 @@ namespace LabGen
                 \textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[2]}: {otherAnswers[1]}}}
                  ";
             }
-            else if(positionOfCorrectNswer == 1)
+            else if (positionOfCorrectNswer == 1)
             {
                 template += $@"\textbf{{\fontsize{{1cm}}{{2cm}}\selectfont {otherNodeCodes[1]}: {otherAnswers[0]}}} \\
                 \vspace{{0.5cm}}
@@ -162,7 +163,7 @@ namespace LabGen
             using (var process = new Process())
             {
                 process.StartInfo.FileName = "pdflatex";
-                process.StartInfo.Arguments = $"-output-directory=output {texFilePath}";
+                process.StartInfo.Arguments = $"-output-directory=out {texFilePath}";
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.UseShellExecute = false;
@@ -208,8 +209,8 @@ namespace LabGen
         string[] lines;
         int index;
 
-        public InputAsLinesWrapper(string[] lines) 
-        { 
+        public InputAsLinesWrapper(string[] lines)
+        {
             this.lines = lines;
             index = 0;
         }
@@ -234,7 +235,7 @@ namespace LabGen
 
     public static class Inputreader
     {
-    
+
         public static List<ValiadtedDataFromInput> ReadInputFile(string relativeFilePath)
         {
             // Ignores empty lines. Question must be followed by three answers, each on separate line. 
@@ -244,11 +245,15 @@ namespace LabGen
 
             List<ValiadtedDataFromInput> output = new List<ValiadtedDataFromInput>();
 
-            string nextLine = null;
-
-            while (nextLine is not null)
+            while(true)
             {
                 string question = input.GetNextNonEmptyLine();
+
+                if(question == null)
+                {
+                    break;
+                }   
+
                 string correctAnswer = input.GetNextNonEmptyLine();
                 string[] otherAnswers = new string[answerCount - 1];
 
@@ -258,7 +263,7 @@ namespace LabGen
                 }
 
 
-                if(question is null || correctAnswer is null)
+                if (correctAnswer is null)
                 {
                     throw new FormatException("The input file format is seriously wrong.");
                 }
@@ -272,7 +277,7 @@ namespace LabGen
 
                 ValiadtedDataFromInput questionAndAnswers = new ValiadtedDataFromInput(question, correctAnswer, otherAnswers);
                 output.Add(questionAndAnswers);
-            }
+            } 
 
             return output;
         }
@@ -282,7 +287,7 @@ namespace LabGen
     {
         private static Random random = new Random();
         private HashSet<string> generatedCodes = new HashSet<string>();
-        
+
         private char GetRandomUpperCaseLetter()
         {
             const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -390,8 +395,9 @@ namespace LabGen
             {
                 foreach (LabyrintNode node in levels[i])
                 {
-                    int index = random.Next(levels[i+1].Count);
+                    int index = random.Next(levels[i + 1].Count);
 
+                    ((LabyrintStandardNode)node).otherNodeCodes = new string[answerCount];
                     ((LabyrintStandardNode)node).otherNodeCodes[0] = levels[i + 1][index].nodeCode;
 
                     for (int j = 1; j < answerCount; j++)
@@ -416,6 +422,57 @@ namespace LabGen
             LinkNodes(levels);
 
             return levels;
+        }
+    }
+
+    public static class FileGenerator
+    {
+        static void DeleteFilesWithExtension(string folderPath, string extension)
+        {
+            string[] files = Directory.GetFiles(folderPath, $"*{extension}", SearchOption.AllDirectories);
+
+            foreach (var file in files)
+            {
+                File.Delete(file);
+            }
+        }
+
+        public static void GenerateTeXFilesAndPdfs(List<List<LabyrintNode>> input)
+        {
+            string[] outFiles = Directory.GetFiles("out");
+            string[] texFiles = Directory.GetFiles("tex");
+
+            foreach (string file in outFiles)
+            {
+                File.Delete(file);
+            }
+
+            foreach (string file in texFiles)
+            {
+                File.Delete(file);
+            }
+
+
+            int level = 1;
+
+            foreach (List<LabyrintNode> stage in input)
+            {
+                foreach (LabyrintNode node in stage)
+                {
+                    string texCode = node.GenerateTexTemplate();
+                    string filePath = Path.Combine("tex", level.ToString() + "_" + node.nodeCode + ".tex");
+
+                    FileHandler.SaveTexToFile(texCode, filePath);
+
+                    PdfCompiler.CompileToPdf(filePath);
+                }
+
+                level++;
+            }
+
+            DeleteFilesWithExtension("out", ".aux");
+            DeleteFilesWithExtension("out", ".log");
+
         }
     }
 
@@ -445,7 +502,16 @@ namespace LabGen
             string fileName = "test_input_correct.txt";
 
             List<ValiadtedDataFromInput> input = Inputreader.ReadInputFile(Path.Combine(folderName, fileName));
-            Console.Write(input);
+            
+            SimpleSchemeGenerator schemeGenerator = new SimpleSchemeGenerator();
+
+            int levelSize = 4;
+            int[] wrappedLevelSize = new int[1];
+            wrappedLevelSize[0] = levelSize;
+
+            List<List<LabyrintNode>> labScheme = schemeGenerator.GenerateLabScheme(wrappedLevelSize, input, "01.01.2100");
+
+            FileGenerator.GenerateTeXFilesAndPdfs(labScheme);
         }
     }
 }
