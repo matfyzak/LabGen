@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
 namespace LabGen
 {
@@ -452,11 +451,14 @@ namespace LabGen
 
         public static void GenerateTeXFilesAndPdfs(List<List<LabyrintNode>> input)
         {
-            CreateFolderIfNotExists("out");
-            CreateFolderIfNotExists("tex");
+            const string nameOfTexOutputFolder = "tex";
+            const string nameOfPdfOutputFolder = "out";
 
-            string[] outFiles = Directory.GetFiles("out");
-            string[] texFiles = Directory.GetFiles("tex");
+            CreateFolderIfNotExists(nameOfTexOutputFolder);
+            CreateFolderIfNotExists(nameOfPdfOutputFolder);
+
+            string[] outFiles = Directory.GetFiles(nameOfPdfOutputFolder);
+            string[] texFiles = Directory.GetFiles(nameOfTexOutputFolder);
 
             foreach (string file in outFiles)
             {
@@ -468,7 +470,6 @@ namespace LabGen
                 File.Delete(file);
             }
 
-
             int level = 1;
 
             foreach (List<LabyrintNode> stage in input)
@@ -476,7 +477,7 @@ namespace LabGen
                 foreach (LabyrintNode node in stage)
                 {
                     string texCode = node.GenerateTexTemplate();
-                    string filePath = Path.Combine("tex", level.ToString() + "_" + node.nodeCode + ".tex");
+                    string filePath = Path.Combine(nameOfTexOutputFolder, level.ToString() + "_" + node.nodeCode + ".tex");
 
                     FileHandler.SaveTexToFile(texCode, filePath);
 
@@ -486,8 +487,8 @@ namespace LabGen
                 level++;
             }
 
-            DeleteFilesWithExtension("out", ".aux");
-            DeleteFilesWithExtension("out", ".log");
+            DeleteFilesWithExtension(nameOfPdfOutputFolder, ".aux");
+            DeleteFilesWithExtension(nameOfPdfOutputFolder, ".log");
         }
     }
 
@@ -495,18 +496,20 @@ namespace LabGen
     {
         static void Main(string[] args)
         {
-            string folderName = "input";
-            string fileName = "test_input_correct.txt";
+            string inputFolderName = "input";
+            string inputFileName = "test_input_correct.txt";
 
-            List<ValiadtedDataFromInput> input = Inputreader.ReadInputFile(Path.Combine(folderName, fileName));
+            List<ValiadtedDataFromInput> input = Inputreader.ReadInputFile(Path.Combine(inputFolderName, inputFileName));
             
             SimpleSchemeGenerator schemeGenerator = new SimpleSchemeGenerator();
 
             int levelSize = 4;
+            string date = "01.01.2100";
+
             int[] wrappedLevelSize = new int[1];
             wrappedLevelSize[0] = levelSize;
 
-            List<List<LabyrintNode>> labScheme = schemeGenerator.GenerateLabScheme(wrappedLevelSize, input, "01.01.2100");
+            List<List<LabyrintNode>> labScheme = schemeGenerator.GenerateLabScheme(wrappedLevelSize, input, date);
 
             FileGenerator.GenerateTeXFilesAndPdfs(labScheme);
         }
