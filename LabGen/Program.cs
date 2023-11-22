@@ -400,15 +400,19 @@ namespace LabGen
                     ((LabyrintStandardNode)node).otherNodeCodes = new string[answerCount];
                     ((LabyrintStandardNode)node).otherNodeCodes[0] = levels[i + 1][index].nodeCode;
 
+                    List<int> usedIndexes = new List<int>(); 
+                    usedIndexes.Add(levels[i].IndexOf(node));
+
                     for (int j = 1; j < answerCount; j++)
                     {
-                        int indexOfthisNode = levels[i].IndexOf(node);
 
-                        do {
+                        do 
+                        {
                             index = random.Next(levels[i].Count);
                         }
-                        while (index == indexOfthisNode);
+                        while (usedIndexes.Contains(index));
 
+                        usedIndexes.Add(index);
                         ((LabyrintStandardNode)node).otherNodeCodes[j] = levels[i][index].nodeCode;
                     }
                 }
@@ -472,7 +476,6 @@ namespace LabGen
 
             DeleteFilesWithExtension("out", ".aux");
             DeleteFilesWithExtension("out", ".log");
-
         }
     }
 
@@ -480,24 +483,6 @@ namespace LabGen
     {
         static void Main(string[] args)
         {
-
-            /*string nodeCode = "AA";
-            string question = "Jaká je Výfučí barva?";
-            string[] answers = { "červená", "oranžová", "zelená" };
-            string[] otherNodeCodes = { "VF", "DD", "FF" };
-            string removalDeadline = "01.01.2100";
-            ValiadtedDataFromInput queastionAndAnswers = new ValiadtedDataFromInput(question, answers);
-
-            LabyrintStandardNode node = new LabyrintStandardNode(queastionAndAnswers, nodeCode, otherNodeCodes, removalDeadline);
-
-            string texCode = node.GenerateTexTemplate();
-
-            string filePath = nodeCode + ".tex";
-
-            FileHandler.SaveTexToFile(texCode, filePath);
-
-            PdfCompiler.CompileToPdf(filePath);*/
-
             string folderName = "input";
             string fileName = "test_input_correct.txt";
 
