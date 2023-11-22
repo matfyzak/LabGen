@@ -5,10 +5,54 @@ using System.IO;
 
 namespace LabGen
 {
-    public class LabyrintStandardNode
+    public abstract class LabyrintNode
     {
+        protected string nodeCode;
 
-        string nodeCode;
+        public abstract string GenerateTexTemplate();
+    }
+
+    public class  LabyrintFinishNode : LabyrintNode
+    {
+        string message;
+
+        public LabyrintFinishNode(string nodeCode, string message = "Dorazili jste do cíle. Gratulujeme! Vraťte se na objekt a nahlašte přítomnému organizátorovi svůj návrat, aby vám mohl zaznamenat váš čas.")
+        {
+            this.nodeCode = nodeCode;
+            this.message = message;
+        }
+
+        public override string GenerateTexTemplate()
+        {
+
+            string template = $@"
+            \documentclass[a4paper]{{article}}
+            \usepackage[margin=2cm]{{geometry}}
+            \usepackage{{{{fix - cm}}}}
+
+            \begin{{document}}
+
+            \pagestyle{{empty}}
+
+            \begin{{center}}
+                \textbf{{\fontsize{{3cm}}{{4cm}}\selectfont {nodeCode}}}
+                \vspace{{2cm}}
+            \end{{center}}
+
+            \begin{{center}}
+                \textbf{{\fontsize{{1.5cm}}{{2cm}}\selectfont {message}}}
+                \vspace{{0.5cm}}
+            \end{{center}}
+
+            \end{{document}}
+            ";
+
+            return template;
+        }
+    }
+
+    public class LabyrintStandardNode : LabyrintNode
+    {        
         string question;
         string correctAnswer;
         string[] otherAnswers;
@@ -26,7 +70,7 @@ namespace LabGen
             
         }
 
-        public string GenerateTexTemplate()
+        public override string GenerateTexTemplate()
         {
             if (otherAnswers.Length != 2 || otherNodeCodes.Length != 3)
             {
@@ -239,7 +283,8 @@ namespace LabGen
     public interface ISchemeGenerator
     {
         public void ValidateArgs(int[] args);
-        public List<List<LabyrintStandardNode>> GenerateLabScheme(int[] args, List<ValiadtedDataFromInput> questionAndAnswers, string removalDeadline);
+
+        public List<List<LabyrintNode>> GenerateLabScheme(int[] args, List<ValiadtedDataFromInput> questionAndAnswers, string removalDeadline);
     }
 
     public class SimpleSchemeGenerator : ISchemeGenerator
@@ -256,7 +301,7 @@ namespace LabGen
             }
         }
 
-        List<List<LabyrintStandardNode>> AssignNodesToLevels(int[] args, List<ValiadtedDataFromInput> questionsAndAnswers, string removalDeadline)
+        List<List<LabyrintNode>> AssignNodesToLevels(int[] args, List<ValiadtedDataFromInput> questionsAndAnswers, string removalDeadline)
         {
             int levelSize = args[0];
             int remainingNumberOfQuestions = questionsAndAnswers.Count;
@@ -264,11 +309,11 @@ namespace LabGen
 
             UniqueNodeCodeGenerator codeGenerator = new UniqueNodeCodeGenerator();
 
-            List<List<LabyrintStandardNode>> levels = new List<List<LabyrintStandardNode>>();
+            List<List<LabyrintNode>> levels = new List<List<LabyrintNode>>();
 
             while (remainingNumberOfQuestions > 0)
             {
-                List<LabyrintStandardNode> level = new List<LabyrintStandardNode>();
+                List<LabyrintNode> level = new List<LabyrintNode>();
 
                 if (remainingNumberOfQuestions >= levelSize)
                 {
@@ -276,7 +321,7 @@ namespace LabGen
 
                     for (int i = 0; i < levelSize; i++)
                     {
-                        LabyrintStandardNode node = new LabyrintStandardNode(questionsAndAnswers[inputIndex], codeGenerator.GenerateNextUniqueNodeCode(), null, removalDeadline);
+                        LabyrintNode node = new LabyrintStandardNode(questionsAndAnswers[inputIndex], codeGenerator.GenerateNextUniqueNodeCode(), null, removalDeadline);
                         inputIndex++;
                         level.Add(node);
                     }
@@ -285,7 +330,7 @@ namespace LabGen
                 {
                     for (int i = 0; i < remainingNumberOfQuestions; i++)
                     {
-                        LabyrintStandardNode node = new LabyrintStandardNode(questionsAndAnswers[inputIndex], codeGenerator.GenerateNextUniqueNodeCode(), null, removalDeadline);
+                        LabyrintNode node = new LabyrintStandardNode(questionsAndAnswers[inputIndex], codeGenerator.GenerateNextUniqueNodeCode(), null, removalDeadline);
                         inputIndex++;
                         level.Add(node);
                     }
@@ -299,16 +344,17 @@ namespace LabGen
             return levels;
         }
 
-        void LinkNodes(List<List<LabyrintStandardNode>> levels)
+        void LinkNodes(List<List<LabyrintNode>> levels)
         {
             return;
         }
 
-        public List<List<LabyrintStandardNode>> GenerateLabScheme(int[] args, List<ValiadtedDataFromInput> questionsAndAnswers, string removalDeadline)
+        public List<List<LabyrintNode>> GenerateLabScheme(int[] args, List<ValiadtedDataFromInput> questionsAndAnswers, string removalDeadline)
         {
             ValidateArgs(args);
-            List<List<LabyrintStandardNode>> levels = AssignNodesToLevels(args, questionsAndAnswers, removalDeadline);
+            List<List<LabyrintNode>> levels = AssignNodesToLevels(args, questionsAndAnswers, removalDeadline);
             LinkNodes(levels);
+
             return levels;
         }
     }
