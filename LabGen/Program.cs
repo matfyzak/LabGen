@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -8,25 +9,29 @@ namespace LabGen
     {
         string nodeCode;
         string question;
-        string[] answers;
+        string correctAnswer;
+        string[] otherAnswers;
         string[] otherNodeCodes;
         string removalDeadline;
 
-        public LabyrintStandardNode(string nodeCode, string question, string[] answers, string[] otherNodeCodes, string removalDeadline)
+        public LabyrintStandardNode(ValiadtedDataFromInput questionAndAnswers, string nodeCode, string[] otherNodeCodes, string removalDeadline)
         {
             this.nodeCode = nodeCode;
-            this.question = question;
-            this.answers = answers;
+            question = questionAndAnswers.question;
+            correctAnswer = questionAndAnswers.correctAnswer;
+            otherAnswers = questionAndAnswers.otherAnswers;
             this.otherNodeCodes = otherNodeCodes;
             this.removalDeadline = removalDeadline;
         }
 
         public string GenerateTexTemplate()
         {
-            if (answers.Length != 3 || otherNodeCodes.Length != 3)
+            if (otherAnswers.Length != 2 || otherNodeCodes.Length != 3)
             {
                 throw new ArgumentException { };
             }
+
+            // FIXME shuffle answers first!
 
 
             string template = $@"
@@ -105,10 +110,104 @@ namespace LabGen
                 else
                 {
                     process.Kill();
-                    throw new TimeoutException();
+                    throw new TimeoutException("Compilation to pdf took too long.");
                 }
             }
         }
+    }
+
+    public struct ValiadtedDataFromInput
+    {
+        public readonly string question;
+        public readonly string correctAnswer;
+        public readonly string[] otherAnswers;
+
+        public ValiadtedDataFromInput(string question, string correctAnswer, string[] otherAnswers)
+        {
+            this.question = question;
+            this.correctAnswer = correctAnswer;
+            this.otherAnswers = otherAnswers;
+        }
+    }
+
+    public class InputAsLinesWrapper
+    {
+        string[] lines;
+        int index;
+
+        public InputAsLinesWrapper(string[] lines) 
+        { 
+            this.lines = lines;
+            index = 0;
+        }
+
+        public string GetNextNonEmptyLine()
+        {
+            while (index < lines.Length)
+            {
+                string line = lines[index];
+                index++;
+
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+
+                    return line;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    public static class Inputreader
+    {
+    
+        public static List<ValiadtedDataFromInput> ReadInputFile(string relativeFilePath)
+        {
+            // Ignores empty lines. Question must be followed by three answers, each on separate line. 
+
+            const int answerCount = 3;
+            InputAsLinesWrapper input = new InputAsLinesWrapper(File.ReadAllLines(relativeFilePath));
+
+            List<ValiadtedDataFromInput> output = new List<ValiadtedDataFromInput>();
+
+            string nextLine = null;
+
+            while (nextLine is not null)
+            {
+                string question = input.GetNextNonEmptyLine();
+                string correctAnswer = input.GetNextNonEmptyLine();
+                string[] otherAnswers = new string[answerCount - 1];
+
+                for (int j = 0; j < answerCount - 1; j++)
+                {
+                    otherAnswers[j] = input.GetNextNonEmptyLine();
+                }
+
+
+                if(question is null || correctAnswer is null)
+                {
+                    throw new FormatException("The input file format is seriously wrong.");
+                }
+                for (int k = 0; k < answerCount - 1; k++)
+                {
+                    if (otherAnswers[k] is null)
+                    {
+                        throw new FormatException("The input file format is seriously wrong.");
+                    }
+                }
+
+                ValiadtedDataFromInput questionAndAnswers = new ValiadtedDataFromInput(question, correctAnswer, otherAnswers);
+                output.Add(questionAndAnswers);
+            }
+
+            return output;
+        }
+    }
+
+    public static class LabGen
+    {
+
     }
 
     internal class Program
@@ -116,13 +215,14 @@ namespace LabGen
         static void Main(string[] args)
         {
 
-            string nodeCode = "AA";
+            /*string nodeCode = "AA";
             string question = "Jaká je Výfučí barva?";
             string[] answers = { "červená", "oranžová", "zelená" };
             string[] otherNodeCodes = { "VF", "DD", "FF" };
             string removalDeadline = "01.01.2100";
+            ValiadtedDataFromInput queastionAndAnswers = new ValiadtedDataFromInput(question, answers);
 
-            LabyrintStandardNode node = new LabyrintStandardNode(nodeCode, question, answers, otherNodeCodes, removalDeadline);
+            LabyrintStandardNode node = new LabyrintStandardNode(queastionAndAnswers, nodeCode, otherNodeCodes, removalDeadline);
 
             string texCode = node.GenerateTexTemplate();
 
@@ -130,7 +230,13 @@ namespace LabGen
 
             FileHandler.SaveTexToFile(texCode, filePath);
 
-            PdfCompiler.CompileToPdf(filePath);
+            PdfCompiler.CompileToPdf(filePath);*/
+
+            string folderName = "input";
+            string fileName = "test_input_correct.txt";
+
+            List<ValiadtedDataFromInput> input = Inputreader.ReadInputFile(Path.Combine(folderName, fileName));
+            Console.Write(input);
         }
     }
 }
