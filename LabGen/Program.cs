@@ -431,6 +431,15 @@ namespace LabGen
 
     public static class FileGenerator
     {
+        static void CreateFolderIfNotExists(string folderPath)
+        {
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+        }
+
         static void DeleteFilesWithExtension(string folderPath, string extension)
         {
             string[] files = Directory.GetFiles(folderPath, $"*{extension}", SearchOption.AllDirectories);
@@ -443,6 +452,9 @@ namespace LabGen
 
         public static void GenerateTeXFilesAndPdfs(List<List<LabyrintNode>> input)
         {
+            CreateFolderIfNotExists("out");
+            CreateFolderIfNotExists("tex");
+
             string[] outFiles = Directory.GetFiles("out");
             string[] texFiles = Directory.GetFiles("tex");
 
@@ -507,4 +519,5 @@ namespace LabGen
    * Better input handler (csv)
    * General count of answers
    * Visual output (graph or text file)
+   * Divide this file into more files
  */
